@@ -61,15 +61,30 @@ public class createInvoiceController {
 
     }
 
-    @GetMapping("/generateInvoice")
-    public ResponseEntity<> createInvoice(){
+    @PostMapping("/generateInvoice")
+    public ResponseEntity<String> createInvoice(@RequestBody String invoiceJson){
+
+        if(accessToken ==  null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Access Tokem is missing.");
+        }
         String Url = BASE_URL + "/v3/company/9341453903497346/invoice?minorversion=75";
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
-        headers.setBasicAuth(accessToken);
+        headers.setBearerAuth(accessToken);
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        HttpEntity<String> = 
+        HttpEntity<String> request= new HttpEntity<>(invoiceJson,headers);
+        ResponseEntity<Map> response = restTemplate.exchange(Url,HttpMethod.POST,request,Map.class);
+
+        if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+            Map<String, Object> invoice = (Map<String, Object>) response.getBody().get("Invoice");
+            String invoiceId = invoice.get("Id").toString();
+            return ResponseEntity.ok("Invoice created successfully Invoice ID is : " + invoiceId);
+        }
+
+        return ResponseEntity.status(response.getStatusCode()).body("Failed to create invoice");
+
+
     }
 
 }
